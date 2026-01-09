@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Chat en ligne</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.5s;
+}
+
+#chat {
+    width: 400px;
+    height: 600px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    word-wrap: break-word;
+    color: white;
+    align-self: flex-start;
+    transition: all 0.3s;
+}
+
+.message.self {
+    align-self: flex-end;
+}
+
+#inputZone {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.ligne1, .ligne2, .ligne3 {
+    display: flex;
+    gap: 6px;
+}
+
+#pseudo { width: 100px; }
+.ligne2 input, .ligne3 select { flex: 1; }
+
+button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+button:hover { background: #43a047; }
+</style>
+</head>
+
+<body>
+<div id="chat">
+    <div id="messages"></div>
+    <div id="inputZone">
+        <div class="ligne1">
+            <input id="pseudo" placeholder="Pseudo">
+        </div>
+        <div class="ligne2">
+            <input id="message" placeholder="Message">
+            <button onclick="envoyer()">Envoyer</button>
+        </div>
+        <div class="ligne3">
+            <select id="background" onchange="changerBG()">
+                <option value="linear-gradient(135deg, #74ebd5, #9face6)">Bleu/Vert</option>
+                <option value="linear-gradient(135deg, #ff9a9e, #fad0c4)">Rose</option>
+                <option value="linear-gradient(135deg, #a1c4fd, #c2e9fb)">Bleu clair</option>
+                <option value="linear-gradient(135deg, #fbc2eb, #a6c1ee)">Violet</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<script>
+// Configuration Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBRC1KttCOwJmO1vjK2R7UrioSFTRtfgH4",
+  authDomain: "chat-en-ligne-9e09d.firebaseapp.com",
+  databaseURL: "https://chat-en-ligne-9e09d-default-rtdb.firebaseio.com",
+  projectId: "chat-en-ligne-9e09d",
+  storageBucket: "chat-en-ligne-9e09d.firebasestorage.app",
+  messagingSenderId: "105413745466",
+  appId: "1:105413745466:web:1a4360e765d88a6a430e03"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const messagesRef = database.ref("messages");
+
+// Persistance pseudo
+let pseudo = localStorage.getItem("pseudo") || "";
+document.getElementById("pseudo").value = pseudo;
+
+// Palette de couleurs par pseudo
+const colors = {};
+function getColor(name) {
+    if (!colors[name]) {
+        colors[name] = `hsl(${Math.floor(Math.random()*360)}, 60%, 50%)`;
+    }
+    return colors[name];
+}
+
+// Changer background
+function changerBG() {
+    const bg = document.getElementById("background").value;
+    document.body.style.background = bg;
+}
+
+// Envoyer message
+function envoyer() {
+    pseudo = document.getElementById("pseudo").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    if (!pseudo) return alert("Merci d'indiquer un pseudo.");
+    if (!message) return alert("Merci d'écrire un message.");
+
+    localStorage.setItem("pseudo", pseudo);
+    messagesRef.push({ pseudo, texte: message });
+    document.getElementById("message").value = "";
+}
+
+// Affichage messages en temps réel
+messagesRef.on("child_added", snapshot => {
+    const data = snapshot.val();
+    const div = document.createElement("div");
+    div.className = "message";
+    div.textContent = data.texte;
+    div.style.background = getColor(data.pseudo);
+
+    if (data.pseudo === pseudo) div.classList.add("self");
+
+    const messages = document.getElementById("messages");
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+});
+
+// Background initial
+changerBG();
+</script>
+</body>
+</html>
